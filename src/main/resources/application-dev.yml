@@ -1,0 +1,31 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: request-management
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydb
+    username: user
+    password: pass
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+      hibernate.dialect: org.hibernate.dialect.MySQLDialect
+
+  flyway:
+    enabled: true        # Enable Flyway
+    locations: classpath:db/migration # Default migration folder
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet.DispatcherServlet: DEBUG
+    com.example.myapp.controller: INFO
+    com.example.myapp.repository: DEBUG
+    org.hibernate.SQL: OFF
+    org.hibernate.type.descriptor.sql: OFF
+    org.hibernate.type.descriptor.sql.BasicBinder: OFF
+    feign: TRACE
