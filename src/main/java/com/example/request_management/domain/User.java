@@ -1,9 +1,6 @@
 package com.example.request_management.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
@@ -13,8 +10,17 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class User {
+    public enum Role{
+        ADMIN, USER, OPERATOR
+    }
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Use IDENTITY strategy for MySQL
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @NonNull
+    private String password;
+    @Column(unique = true)
+    private String username;
     private String name;
+    @Enumerated(EnumType.STRING)
+    private Role role;
 }

@@ -29,3 +29,7 @@ logging:
     org.hibernate.type.descriptor.sql: OFF
     org.hibernate.type.descriptor.sql.BasicBinder: OFF
     feign: TRACE
+request_management:
+  jwt:
+    secret: '4e2a55a933f04c7b736d915bda01b767e3a0ea545ac79d8c8bc4f77e120f6k233no12enpo13roefno32o332rf3ni3223fp32e0c'
+    token-validity-in-minute: 10

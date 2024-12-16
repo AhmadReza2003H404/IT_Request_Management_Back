@@ -10,4 +10,10 @@ public class CreateUserRequest {
 
     @NonNull
     private String name;
+    @NonNull
+    private String username;
+    @NonNull
+    private String password;
+    @NonNull
+    private String role;
 }

@@ -9,10 +9,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("select u from User u where " +
             "(:name is null or u.name like  %:name)")
     Page<User> getUsersByFilters(@Param("name") String name, Pageable pageable);
+
+    Optional<User> findByUsername(String username);
 }

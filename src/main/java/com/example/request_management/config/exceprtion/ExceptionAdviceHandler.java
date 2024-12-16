@@ -4,14 +4,12 @@ import com.example.request_management.exception.UserNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.Collections;
-import java.util.Locale;
 
 @Slf4j
 @ControllerAdvice
@@ -29,6 +27,14 @@ public class ExceptionAdviceHandler {
     public ErrorContent handle(NotFoundException e) {
         return translateException(e, null);
     }
+
+    @ExceptionHandler(SecurityException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public ErrorContent handle(SecurityException e) {
+        return translateException(e, null);
+    }
+
 
     private ErrorContent translateException(Exception e, Object[] parameters) {
         logError(e);
