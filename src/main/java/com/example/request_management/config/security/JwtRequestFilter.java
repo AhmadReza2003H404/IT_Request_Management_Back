@@ -1,7 +1,8 @@
 package com.example.request_management.config.security;
 
-import com.example.request_management.config.exceprtion.ErrorContent;
-import com.example.request_management.domain.User;
+import com.example.request_management.config.exception.ErrorContent;
+import com.example.request_management.config.exception.InvalidTokenException;
+import com.example.request_management.config.exception.TokenExpiredException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -13,17 +14,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 
 @RequiredArgsConstructor
 @Component
@@ -39,6 +41,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
 
     private static String parseErrorMessage(String errorMessage) throws JsonProcessingException {
+        log.error(errorMessage);
         String[] errorMessageItems = errorMessage.split("#");
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -51,57 +54,61 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        final String authorizationHeader = request.getHeader("Authorization");
-        logger.error("Authorization header: " + authorizationHeader);
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        String header = request.getHeader("Authorization");
 
-        String username = null;
-        String jwtToken = null;
+        if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
 
-        // Extract token from the Authorization header
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            jwtToken = authorizationHeader.substring(7); // Remove "Bearer " prefix
             try {
-                // Extract username from token
-                username = jwtTokenProvider.extractUsername(jwtToken);
+                String username = jwtTokenProvider.getUsernameFromToken(token);
+                String role = jwtTokenProvider.getRole(token);
+
+                System.out.println("Username: " + username);
+                System.out.println("Role: " + role);
+
+                if (username != null && role != null) {
+                    SecurityContextHolder.getContext().setAuthentication(
+                            new UsernamePasswordAuthenticationToken(username, null, List.of(new SimpleGrantedAuthority("ROLE_"+role)))
+                    );
+                }
+            } catch (IllegalArgumentException e) {
+                System.out.println("Unable to get JWT Token");
+
+                response.setStatus(HttpStatus.FORBIDDEN.value());
+                response.setContentType("application/json");
+                response.getOutputStream().write(parseErrorMessage(messageSource.getMessage(
+                        InvalidTokenException.class.getName(),
+                        null, Locale.getDefault()
+                )).getBytes("UTF-8"));
+                return;
+
             } catch (ExpiredJwtException e) {
-                logger.warn("JWT Token has expired", e);  // Use logger instead of System.out
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token has expired");
-                return;  // End the filter chain as the token is invalid
-            } catch (Exception e) {
-                logger.error("Error while extracting JWT token", e);
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Error while extracting JWT token");
-                return;  // End the filter chain if there is any other error
+                log.debug("JWT Token has expired");
+
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                response.setContentType("application/json");
+                response.getOutputStream().write(parseErrorMessage(messageSource.getMessage(
+                        TokenExpiredException.class.getName(),
+                        null, Locale.getDefault()
+                )).getBytes("UTF-8"));
+                return;
+            } catch (Exception e){
+                log.debug("Something went wrong");
+
+                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                response.setContentType("application/json");
+                response.getOutputStream().write(parseErrorMessage(messageSource.getMessage(
+                        TokenExpiredException.class.getName(),
+                        null, Locale.getDefault()
+                )).getBytes("UTF-8"));
+                return;
             }
         } else {
-            logger.warn("Authorization header is missing or does not contain Bearer token");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authorization header is missing or does not contain Bearer token");
-            return;  // End the filter chain if there's no authorization header
+            System.out.println("No Authorization header found");
         }
 
-        // If username is valid and not already authenticated, authenticate the request
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-            // Validate the token
-            if (jwtTokenProvider.validateToken(jwtToken, userDetails)) {
-                User user = (User) userDetails;  // Assuming userDetails is your User entity
-                SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
-
-                // Manually set the authorities in the authentication token
-                var authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, Collections.singletonList(authority));
-                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-            } else {
-                logger.warn("JWT Token is not valid");
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token is not valid");
-                return;  // End the filter chain if the token is invalid
-            }
-        }
-
-        // Continue the filter chain
         filterChain.doFilter(request, response);
     }
-
-
 }

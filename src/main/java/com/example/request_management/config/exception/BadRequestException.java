@@ -1,4 +1,4 @@
-package com.example.request_management.config.exceprtion;
+package com.example.request_management.config.exception;
 
 public class BadRequestException extends BusinessException {
     {

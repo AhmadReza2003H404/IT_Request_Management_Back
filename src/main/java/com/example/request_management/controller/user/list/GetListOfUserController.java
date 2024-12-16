@@ -4,6 +4,7 @@ import com.example.request_management.dto.UserDTO;
 import com.example.request_management.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +16,8 @@ import java.util.stream.Collectors;
 public class GetListOfUserController {
     private final UserService userService;
 
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users")
     public GetListOfUserResponse createUser(@RequestParam(name = "name", required = false) String name,
                                             @RequestParam(name = "pageSize", required = false, defaultValue = "10") Integer pageSize,

@@ -1,3 +1,7 @@
+apis:
+  version: v1
+  secure: /request-management/api/${apis.version}
+
 spring:
   profiles:
     active: dev

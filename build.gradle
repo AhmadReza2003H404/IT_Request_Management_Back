@@ -41,6 +41,8 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	implementation 'io.vavr:vavr:0.10.4'
+	implementation 'org.springframework.cloud:spring-cloud-dependencies:2022.0.5'
+
 }
 
 

@@ -82,7 +82,6 @@ public class UserServiceImpl implements UserService {
     }
 
     public AuthenticationResult login(String username, String password) {
-        System.out.println("mio1" + username);
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, password)
